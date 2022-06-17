@@ -1,0 +1,74 @@
+from flask import Flask, redirect, url_for, render_template, request, session,flash
+from config import *
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'python'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///books.sqlite'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
+
+
+# db.create_all()
+# b1 = Books.query.first()
+# print(b1)
+# all_books = Books.query.all()
+# print(all_books)
+# for each in all_books:
+#     print(each)
+# all_books = Books.query.filter_by(author='William Shakespeare').all() # where
+# for each in all_books:
+#     print(each)
+
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+
+@app.route('/login', methods=['POST', 'GET'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        session['username'] = username
+        return redirect(url_for('user'))
+
+    return render_template('login.html')
+
+
+
+@app.route('/user')
+def user():
+    subjects = ['Python', 'Calculus', 'DB']
+    return render_template('user.html',  subjects=subjects)
+
+
+@app.route('/<name>/<age>')
+def userage(name, age):
+    return f'Hello {name}, your age is {age}'
+
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    return 'you are logged out'
+
+
+@app.route('/books', methods=['GET', 'POST'])
+def books():
+    if request.method=="POST":
+        t = request.form['title']
+        a = request.form['author']
+        p = request.form['price']
+        if t == '' or a == '' or p == '': flash("შეიყვანეთ ყველა ველი", 'error')
+        elif not p.isdecimal():  flash("შეიყვანეთ რიცხვი",'error')
+        else:
+            b1 = Books(title=t, author=a, price=float(p))
+            db.session.add(b1)
+            db.session.commit()
+            flash("მონაცემები დამატებულია",'info')
+
+
+    return render_template('books.html')
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
